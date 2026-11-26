@@ -1,0 +1,22 @@
+{
+  "name": "aws-start-poc",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Full-stack quick start: React 19 + NestJS 12 + DynamoDB, deployed to AWS (ECS Fargate, S3 + CloudFront) with CDK",
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter api --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "db:local": "docker compose up -d dynamodb-local",
+    "db:init": "pnpm --filter api db:init",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm --filter api --filter web build",
+    "synth": "pnpm --filter web build && pnpm --filter infra synth"
+  }
+}

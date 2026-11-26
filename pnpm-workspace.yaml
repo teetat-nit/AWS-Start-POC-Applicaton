@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - infra
+
+# Supply-chain guard (pnpm default): don't install versions published less than a day ago.
+# Avoid adding minimumReleaseAgeExclude entries; widen version ranges instead.
+
+# pnpm blocks dependency install scripts by default; allow only the ones we need.
+allowBuilds:
+  argon2: true
+  "@nestjs/core": false
+  "@parcel/watcher": false
+  esbuild: true

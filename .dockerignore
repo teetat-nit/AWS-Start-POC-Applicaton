@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/cdk.out
+**/coverage
+**/.env
+**/.env.*
+.git
+skills
+# Only the API image is built from this context; other workspace packages need just package.json
+# so pnpm can validate the lockfile.
+infra/*
+!infra/package.json
+apps/web/*
+!apps/web/package.json
