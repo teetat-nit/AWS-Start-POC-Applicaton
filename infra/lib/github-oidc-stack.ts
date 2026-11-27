@@ -59,7 +59,7 @@ export class GithubOidcStack extends Stack {
       }),
     );
 
-    new CfnOutput(this, 'DeployRoleArn', {
+    new CfnOutput(this, 'DeployRoleArn', { 
       value: role.roleArn,
       description: 'Set as GitHub repository variable AWS_DEPLOY_ROLE_ARN',
     });
