@@ -65,3 +65,41 @@ describe('PocStack', () => {
     });
   });
 });
+
+describe('PocStack with hosting=alb (temporary dev-only mode)', () => {
+  const albProps = { ...props, hosting: 'alb' as const };
+  const template = Template.fromStack(new PocStack(new App(), 'alb', albProps));
+
+  it('passes cdk-nag AwsSolutions checks', () => {
+    const app = new App();
+    Validations.of(app).addPlugins(new AwsSolutionsChecks(app));
+    new PocStack(app, 'nag-alb', albProps);
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  it('creates no CloudFront, S3 or origin-verify secret', () => {
+    template.resourceCountIs('AWS::CloudFront::Distribution', 0);
+    template.resourceCountIs('AWS::S3::Bucket', 0);
+    template.resourceCountIs('AWS::SecretsManager::Secret', 1); // JWT only
+  });
+
+  it('forwards all ALB traffic to the API, which serves the SPA over http', () => {
+    template.hasResourceProperties('AWS::ElasticLoadBalancingV2::Listener', {
+      Port: 80,
+      DefaultActions: [Match.objectLike({ Type: 'forward' })],
+    });
+    template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      ContainerDefinitions: [
+        Match.objectLike({
+          Environment: Match.arrayWith([{ Name: 'SERVE_WEB_DIR', Value: '/repo/apps/web/dist' }]),
+        }),
+      ],
+    });
+    const taskDef = JSON.stringify(template.findResources('AWS::ECS::TaskDefinition'));
+    expect(taskDef).toMatch(/"Name":"APP_PUBLIC_URL","Value":\{"Fn::Join":\["",\["http:\/\/"/);
+  });
+
+  it('is refused outside dev', () => {
+    expect(() => new PocStack(new App(), 'uat', { ...albProps, envName: 'uat' })).toThrow(/only allowed for env=dev/);
+  });
+});

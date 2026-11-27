@@ -138,6 +138,19 @@ Push to `main` (or *Actions โ’ ci โ’ Run workflow*). The `deploy-dev
 
 The deploy role can only assume the CDK bootstrap roles, and only from this repo's `dev` environment. No AWS keys are stored in GitHub.
 
+### Temporary: dev without CloudFront (`hosting=alb`)
+
+New AWS accounts can be blocked from creating CloudFront distributions ("Your account must be verified…").
+Until AWS Support verifies the account, dev can run without CloudFront and S3:
+
+```
+Browser ──HTTP──► ALB ──► ECS Fargate (NestJS serves /api/* and the React build) ──► DynamoDB
+```
+
+- Turn on: GitHub repo variable `HOSTING=alb` (or `-c hosting=alb` locally). It is refused for uat/prod.
+- Limits: plain HTTP, so use test accounts and test passwords only. No CloudFront security headers or edge cache.
+  Google login does not work, because Google needs an https redirect URI.
+- Turn off: delete the `HOSTING` variable and re-run the workflow. CloudFront + S3 come back, and the app URL changes to `https://…cloudfront.net`.
 ### Optional: Google login in AWS
 
 Store the OAuth client in Secrets Manager (never in code or CDK context):

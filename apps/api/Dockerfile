@@ -1,4 +1,4 @@
-# Build context = repository root (pnpm workspace). Built by CDK (infra) or:
+﻿# Build context = repository root (pnpm workspace). Built by CDK (infra) or:
 #   docker build -f apps/api/Dockerfile -t poc-api .
 FROM node:26-alpine AS base
 RUN npm install -g pnpm@12.23.0
@@ -15,6 +15,19 @@ RUN pnpm install --frozen-lockfile --filter api
 COPY apps/api apps/api
 RUN pnpm --filter api build
 
+# React SPA, served by the API only when SERVE_WEB_DIR is set (dev-only ALB hosting without CloudFront).
+# Debian-based so Vite/Tailwind native bindings use their glibc builds.
+FROM node:26-slim AS web-build
+RUN npm install -g pnpm@12.23.0
+WORKDIR /repo
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY infra/package.json infra/
+RUN pnpm install --frozen-lockfile --filter web
+COPY apps/web apps/web
+RUN pnpm --filter web exec vite build
+
 FROM manifests AS prod-deps
 RUN pnpm install --frozen-lockfile --prod --filter api
 
@@ -25,6 +38,7 @@ COPY --from=prod-deps --chown=node:node /repo/node_modules ./node_modules
 COPY --from=prod-deps --chown=node:node /repo/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=node:node /repo/apps/api/dist ./apps/api/dist
 COPY --chown=node:node apps/api/package.json ./apps/api/
+COPY --from=web-build --chown=node:node /repo/apps/web/dist ./apps/web/dist
 WORKDIR /repo/apps/api
 USER node
 EXPOSE 3000

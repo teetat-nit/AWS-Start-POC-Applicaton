@@ -65,6 +65,7 @@ jobs:
         run: >
           pnpm --filter infra exec cdk deploy "$PROJECT_NAME-dev"
           --require-approval never --outputs-file cdk-outputs.json -c env=dev
+          -c hosting=${{ vars.HOSTING || 'cloudfront' }}
           ${{ vars.GOOGLE_SECRET_NAME && format('-c googleSecretName={0}', vars.GOOGLE_SECRET_NAME) || '' }}
       - name: Stack outputs
         id: outputs

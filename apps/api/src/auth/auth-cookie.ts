@@ -1,4 +1,4 @@
-import type { CookieOptions, Request } from 'express';
+﻿import type { CookieOptions, Request } from 'express';
 import type { AppConfig } from '../config/app-config';
 
 export const ACCESS_TOKEN_COOKIE = 'access_token';
@@ -7,7 +7,7 @@ export const ACCESS_TOKEN_COOKIE = 'access_token';
 export function accessTokenCookieOptions(config: AppConfig): CookieOptions {
   return {
     httpOnly: true,
-    secure: config.isProduction,
+    secure: config.httpsOnly,
     sameSite: 'lax',
     path: '/',
     maxAge: config.jwt.expiresInSeconds * 1000,

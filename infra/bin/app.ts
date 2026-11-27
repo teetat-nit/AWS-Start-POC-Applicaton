@@ -2,7 +2,7 @@
 import { App, Tags, Validations } from 'aws-cdk-lib';
 import { AwsSolutionsChecks } from 'cdk-nag';
 import { GithubOidcStack } from '../lib/github-oidc-stack';
-import { PocStack } from '../lib/poc-stack';
+import { type Hosting, PocStack } from '../lib/poc-stack';
 
 const app = new App();
 const ctx = (key: string): string | undefined => {
@@ -30,7 +30,13 @@ new PocStack(app, `${projectName}-${envName}`, {
   googleSecretName: ctx('googleSecretName'),
   albCertificateArn: ctx('albCertificateArn'),
   apiOriginDomain: ctx('apiOriginDomain'),
+  hosting: hostingFromContext(ctx('hosting')),
 });
+
+function hostingFromContext(value: string | undefined): Hosting {
+  if (value === undefined || value === 'cloudfront' || value === 'alb') return value ?? 'cloudfront';
+  throw new Error(`Unknown hosting "${value}". Use -c hosting=cloudfront|alb`);
+}
 
 // One-time, per AWS account: `cdk deploy happy-path-github-oidc` from a laptop after `aws login`.
 const githubRepo = ctx('githubRepo');

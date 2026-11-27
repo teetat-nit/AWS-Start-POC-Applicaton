@@ -1,4 +1,4 @@
-**/node_modules
+﻿**/node_modules
 **/dist
 **/cdk.out
 **/coverage
@@ -6,9 +6,9 @@
 **/.env.*
 .git
 skills
-# Only the API image is built from this context; other workspace packages need just package.json
-# so pnpm can validate the lockfile.
+# The image contains the API and the built web app. infra only needs package.json so pnpm can validate the lockfile.
 infra/*
 !infra/package.json
-apps/web/*
-!apps/web/package.json
+**/*.test.tsx
+**/*.test.ts
+apps/web/src/test

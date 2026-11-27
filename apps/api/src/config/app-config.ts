@@ -1,4 +1,4 @@
-export const APP_CONFIG = Symbol('APP_CONFIG');
+﻿export const APP_CONFIG = Symbol('APP_CONFIG');
 
 export type DbDriver = 'memory' | 'dynamodb';
 
@@ -8,6 +8,10 @@ export interface AppConfig {
   port: number;
   /** Origin the browser uses (Vite dev server locally, CloudFront URL in AWS). No trailing slash. */
   publicUrl: string;
+  /** True when publicUrl is https: cookies get the Secure flag and helmet upgrades insecure requests. */
+  httpsOnly: boolean;
+  /** Directory with the built SPA to serve from the API (dev-only ALB hosting). Unset = API only. */
+  webDir?: string;
   trustProxyHops: number;
   db: {
     driver: DbDriver;
@@ -72,10 +76,12 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     isProduction,
     port: toInt(env.PORT, 3000),
     publicUrl,
+    httpsOnly: publicUrl.startsWith('https://'),
+    webDir: env.SERVE_WEB_DIR?.trim() || undefined,
     trustProxyHops: toInt(env.TRUST_PROXY_HOPS, 1),
     db: {
       driver,
-      region: env.AWS_REGION ?? 'ap-southeast-1',
+      region: env.AWS_REGION ?? 'ap-southeast-2',
       usersTableName,
       endpoint: env.DYNAMODB_ENDPOINT || undefined,
     },
