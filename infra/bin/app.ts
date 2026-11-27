@@ -39,6 +39,7 @@ if (githubRepo) {
     env,
     projectName,
     githubRepo,
+    githubSubjectPrefix: ctx('githubSubjectPrefix'),
     githubEnvironments: (ctx('githubEnvironments') ?? 'dev').split(',').map((e) => e.trim()),
     existingProviderArn: ctx('githubOidcProviderArn'),
   });

@@ -7,6 +7,12 @@ export interface GithubOidcStackProps extends StackProps {
   projectName: string;
   /** "owner/repo" allowed to assume the deploy role. */
   githubRepo: string;
+  /**
+   * Start of the token's `sub` claim, as GitHub reports it for the repo:
+   * `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` → sub_claim_prefix.
+   * Repos using immutable subjects look like "repo:owner@123/repo@456". Default: "repo:<githubRepo>".
+   */
+  githubSubjectPrefix?: string;
   /** GitHub Actions environments (jobs with `environment: <name>`) allowed to deploy. */
   githubEnvironments: string[];
   /** ARN of an existing GitHub OIDC provider (only one is allowed per account). Omit to create it. */
@@ -30,6 +36,7 @@ export class GithubOidcStack extends Stack {
           removalPolicy: RemovalPolicy.RETAIN,
         }).oidcProviderArn;
 
+    const subjectPrefix = props.githubSubjectPrefix ?? `repo:${props.githubRepo}`;
     const role = new iam.Role(this, 'GithubDeployRole', {
       roleName: `${props.projectName}-github-deploy`,
       description: `GitHub Actions (${props.githubRepo}) deploys ${props.projectName} via CDK`,
@@ -38,7 +45,7 @@ export class GithubOidcStack extends Stack {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
           'token.actions.githubusercontent.com:sub': props.githubEnvironments.map(
-            (envName) => `repo:${props.githubRepo}:environment:${envName}`,
+            (envName) => `${subjectPrefix}:environment:${envName}`,
           ),
         },
       }),

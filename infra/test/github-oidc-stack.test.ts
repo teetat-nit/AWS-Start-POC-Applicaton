@@ -49,6 +49,25 @@ describe('GithubOidcStack', () => {
     expect(policies).toContain(':iam::111111111111:role/cdk-hnb659fds-*-111111111111-*');
   });
 
+  it('uses the immutable subject prefix when given', () => {
+    const template = Template.fromStack(
+      new GithubOidcStack(new App(), 'immutable', { ...props, githubSubjectPrefix: 'repo:owner@1/repo@2' }),
+    );
+    template.hasResourceProperties('AWS::IAM::Role', {
+      AssumeRolePolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Condition: {
+              StringEquals: Match.objectLike({
+                'token.actions.githubusercontent.com:sub': ['repo:owner@1/repo@2:environment:dev'],
+              }),
+            },
+          }),
+        ],
+      },
+    });
+  });
+
   it('reuses an existing OIDC provider when given', () => {
     const template = Template.fromStack(
       new GithubOidcStack(new App(), 'reuse', {

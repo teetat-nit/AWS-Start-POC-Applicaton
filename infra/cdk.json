@@ -8,6 +8,7 @@
     "projectName": "happy-path",
     "env": "dev",
     "githubRepo": "teetat-nit/AWS-Start-POC-Applicaton",
+    "githubSubjectPrefix": "repo:teetat-nit@99110160/AWS-Start-POC-Applicaton@1472934589",
     "githubEnvironments": "dev",
     "githubOidcProviderArn": "",
     "tags": {
