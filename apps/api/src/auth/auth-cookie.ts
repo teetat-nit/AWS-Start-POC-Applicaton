@@ -1,4 +1,4 @@
-﻿import type { CookieOptions, Request } from 'express';
+import type { CookieOptions, Request } from 'express';
 import type { AppConfig } from '../config/app-config';
 
 export const ACCESS_TOKEN_COOKIE = 'access_token';

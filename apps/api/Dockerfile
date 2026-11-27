@@ -1,4 +1,4 @@
-﻿# Build context = repository root (pnpm workspace). Built by CDK (infra) or:
+# Build context = repository root (pnpm workspace). Built by CDK (infra) or:
 #   docker build -f apps/api/Dockerfile -t poc-api .
 FROM node:26-alpine AS base
 RUN npm install -g pnpm@12.23.0

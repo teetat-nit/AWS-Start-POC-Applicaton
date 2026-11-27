@@ -1,4 +1,4 @@
-﻿import { PassportStrategy } from '@nestjs/passport';
+import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, type Profile } from 'passport-google-oauth20';
 import type { AppConfig } from '../config/app-config';
 import type { PublicUser } from '../users/user.entity';
