@@ -52,7 +52,7 @@ export class GithubOidcStack extends Stack {
     });
 
     role.addToPolicy(
-      new iam.PolicyStatement({
+      new iam.PolicyStatement({ 
         sid: 'AssumeCdkBootstrapRoles',
         actions: ['sts:AssumeRole', 'sts:TagSession'],
         resources: [`arn:${this.partition}:iam::${this.account}:role/cdk-hnb659fds-*-${this.account}-*`],
