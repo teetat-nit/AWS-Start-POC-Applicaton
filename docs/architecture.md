@@ -1,6 +1,6 @@
 # Happy Path: Cloud Architecture
 
-This document describes how the Happy Path application (this repository) runs on AWS: the infrastructure,
+This document describes how the Happy Path application (this  repository) runs on AWS: the infrastructure,
 how requests flow, how code gets deployed, and which security controls are in place. Everything here is
 defined in code. The source of truth is [`infra/lib/poc-stack.ts`](../infra/lib/poc-stack.ts),
 [`infra/lib/github-oidc-stack.ts`](../infra/lib/github-oidc-stack.ts) and
