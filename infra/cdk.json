@@ -5,9 +5,12 @@
     "exclude": ["README.md", "cdk*.json", "**/*.d.ts", "**/*.js", "tsconfig.json", "package*.json", "node_modules", "test"]
   },
   "context": {
+    "projectName": "happy-path",
     "env": "dev",
+    "githubRepo": "teetat-nit/AWS-Start-POC-Applicaton",
+    "githubEnvironments": "dev",
+    "githubOidcProviderArn": "",
     "tags": {
-      "Project": "aws-start-poc",
       "Owner": "wgcl-digital",
       "CostCenter": "CHANGE-ME"
     },

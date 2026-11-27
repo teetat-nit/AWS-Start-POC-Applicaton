@@ -1,4 +1,4 @@
-# AWS Start POC: React + NestJS + DynamoDB on AWS
+﻿# AWS Start POC: React + NestJS + DynamoDB on AWS
 
 A quick-start full-stack app with sign-up and sign-in, ready to deploy to AWS.
 
@@ -11,9 +11,9 @@ A quick-start full-stack app with sign-up and sign-in, ready to deploy to AWS.
 | IaC / CI | AWS CDK (TypeScript) with cdk-nag, GitHub Actions (OIDC to AWS) |
 
 ```
-Browser ──► CloudFront ─┬─ /*      ──► S3 (React build, private, OAC + KMS)
-                        └─ /api/*  ──► ALB ──► ECS Fargate (NestJS) ──► DynamoDB
-                                         ▲ only accepts requests carrying CloudFront's secret header
+Browser โ”€โ”€โ–บ CloudFront โ”€โ”ฌโ”€ /*      โ”€โ”€โ–บ S3 (React build, private, OAC + KMS)
+                        โ””โ”€ /api/*  โ”€โ”€โ–บ ALB โ”€โ”€โ–บ ECS Fargate (NestJS) โ”€โ”€โ–บ DynamoDB
+                                         โ–ฒ only accepts requests carrying CloudFront's secret header
 ```
 
 The SPA and API share one origin (Vite proxy locally, CloudFront in AWS). The session is an
@@ -48,7 +48,7 @@ docker-compose.yml DynamoDB Local
 
 ## Prerequisites
 
-- Node.js 26 LTS (`.nvmrc`) and pnpm 12: `npm i -g pnpm@12` (or `npx pnpm@12 …`)
+- Node.js 26 LTS (`.nvmrc`) and pnpm 12: `npm i -g pnpm@12` (or `npx pnpm@12 โ€ฆ`)
 - Optional: Docker / Rancher Desktop (DynamoDB Local, and required for `cdk deploy` image build)
 - For deploys: AWS CLI v2 with SSO / `aws login` access to the target account
 
@@ -74,7 +74,7 @@ pnpm db:init         # create the users table
 
 ### Enable Google sign-in (optional)
 
-1. Google Cloud Console → APIs & Services → Credentials → **Create OAuth client ID** → *Web application*.
+1. Google Cloud Console โ’ APIs & Services โ’ Credentials โ’ **Create OAuth client ID** โ’ *Web application*.
 2. Authorized redirect URIs: `http://localhost:5173/api/auth/google/callback`
    (and, after deploying, the `GoogleRedirectUri` stack output).
 3. Put the client ID and secret into `apps/api/.env` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) and restart the API.
@@ -83,14 +83,14 @@ pnpm db:init         # create the users table
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/health` | – | ALB health check |
-| GET | `/api/auth/providers` | – | `{ local: true, google: boolean }` |
-| POST | `/api/auth/register` | – | `{ email, password, name }` → user + session cookie |
-| POST | `/api/auth/login` | – | `{ email, password }` → user + session cookie |
-| POST | `/api/auth/logout` | – | clears the cookie (204) |
+| GET | `/api/health` | โ€“ | ALB health check |
+| GET | `/api/auth/providers` | โ€“ | `{ local: true, google: boolean }` |
+| POST | `/api/auth/register` | โ€“ | `{ email, password, name }` โ’ user + session cookie |
+| POST | `/api/auth/login` | โ€“ | `{ email, password }` โ’ user + session cookie |
+| POST | `/api/auth/logout` | โ€“ | clears the cookie (204) |
 | GET | `/api/auth/me` | cookie or Bearer | current user |
-| GET | `/api/auth/google` | – | redirect to Google (404 when not configured) |
-| GET | `/api/auth/google/callback` | – | sets the cookie, redirects to `/` (or `/login?error=google`) |
+| GET | `/api/auth/google` | โ€“ | redirect to Google (404 when not configured) |
+| GET | `/api/auth/google/callback` | โ€“ | sets the cookie, redirects to `/` (or `/login?error=google`) |
 
 Protect your own endpoints with `@UseGuards(JwtAuthGuard)` and read the user with `@CurrentUser()`.
 
@@ -103,25 +103,55 @@ pnpm synth            # builds web, then cdk synth (fails on unacknowledged cdk-
 
 ## Deploy to AWS
 
-Deploys to UAT/prod go through the pipeline. From a laptop, only deploy **dev** in a sandbox account.
+Project name in AWS: **happy-path** (`projectName` in `infra/cdk.json`). Stacks:
 
-```bash
-aws login                                   # or: aws sso login --profile <profile>
-cd infra && pnpm exec cdk bootstrap         # once per account/region
+| Stack | Deployed by | Contents |
+|---|---|---|
+| `happy-path-github-oidc` | you, once per account, from a laptop | GitHub OIDC provider + role `happy-path-github-deploy` |
+| `happy-path-dev` | GitHub Actions on every push to `main` | the application (VPC, DynamoDB, ECS, ALB, S3, CloudFront) |
+
+Deploys to UAT/prod go through the pipeline. From a laptop, only the one-time setup and **dev** in a sandbox account.
+
+### One-time setup (laptop, `aws login`)
+
+```powershell
+winget install Amazon.AWSCLI                 # AWS CLI v2, then open a new terminal
+aws login                                    # sign in with your console credentials; pick the region ap-southeast-2 (ap-southeast-1 is blocked by an org SCP)
+aws sts get-caller-identity                  # check the account is the right one
+cd infra
+pnpm exec cdk bootstrap                      # once per account/region
+pnpm exec cdk deploy happy-path-github-oidc  # prints output DeployRoleArn
 ```
 
-Optional Google login: store the OAuth client in Secrets Manager (never in code or CDK context):
+If the account already has a GitHub OIDC provider (`IAM โ’ Identity providers โ’
+token.actions.githubusercontent.com`), put its ARN in `githubOidcProviderArn` in `cdk.json` first. Only one is allowed per account.
+
+Then in GitHub โ’ repo **Settings**:
+
+1. **Environments** โ’ *New environment* `dev` (optionally add required reviewers or restrict to branch `main`).
+2. **Secrets and variables โ’ Actions โ’ Variables**:
+   - `AWS_DEPLOY_ROLE_ARN` = the `DeployRoleArn` output (`arn:aws:iam::<account>:role/happy-path-github-deploy`)
+   - `AWS_REGION` = the region you bootstrapped (`ap-southeast-2`)
+   - `GOOGLE_SECRET_NAME` (optional) = `happy-path/dev/google-oauth`
+
+Push to `main` (or *Actions โ’ ci โ’ Run workflow*). The `deploy-dev` job deploys `happy-path-dev`, and the app URL is shown on the run summary.
+
+The deploy role can only assume the CDK bootstrap roles, and only from this repo's `dev` environment. No AWS keys are stored in GitHub.
+
+### Optional: Google login in AWS
+
+Store the OAuth client in Secrets Manager (never in code or CDK context):
 
 ```bash
-aws secretsmanager create-secret --name aws-start-poc/dev/google-oauth \
+aws secretsmanager create-secret --name happy-path/dev/google-oauth \
   --secret-string '{"clientId":"<id>","clientSecret":"<secret>"}'
 ```
 
-Deploy (Docker must be running to build the API image):
+### Manual deploy of dev (laptop, Docker must be running to build the API image)
 
 ```bash
 pnpm --filter web build
-pnpm --filter infra exec cdk deploy -c env=dev -c googleSecretName=aws-start-poc/dev/google-oauth
+pnpm --filter infra exec cdk deploy happy-path-dev -c env=dev -c googleSecretName=happy-path/dev/google-oauth
 ```
 
 Stack outputs:
@@ -133,15 +163,19 @@ Stack outputs:
 
 | Key | Default | Purpose |
 |---|---|---|
+| `projectName` | `happy-path` | Stack names, role name, `Project` tag |
 | `env` | `dev` | `dev` / `uat` / `prod`. Prod: 2+ tasks, 2 NAT gateways, RETAIN data, deletion protection |
-| `googleSecretName` | – | Secrets Manager secret `{clientId, clientSecret}`; enables Google login |
-| `albCertificateArn` + `apiOriginDomain` | – | HTTPS from CloudFront to ALB (recommended beyond POC) |
+| `githubRepo` | `teetat-nit/AWS-Start-POC-Applicaton` | Repo allowed to deploy (enables the `-github-oidc` stack) |
+| `githubEnvironments` | `dev` | Comma-separated GitHub environments trusted by the deploy role |
+| `githubOidcProviderArn` | โ€“ | Reuse an existing GitHub OIDC provider instead of creating one |
+| `googleSecretName` | โ€“ | Secrets Manager secret `{clientId, clientSecret}`; enables Google login |
+| `albCertificateArn` + `apiOriginDomain` | โ€“ | HTTPS from CloudFront to ALB (recommended beyond POC) |
 | `tags` | see `cdk.json` | `Project`, `Owner`, `CostCenter` (+ `Environment`) on every resource |
 
 ### CI/CD (GitHub Actions)
 
-`.github/workflows/ci.yml` runs all gates on every PR. On `main` it deploys **dev** when repo variable
-`AWS_DEPLOY_ROLE_ARN` (GitHub OIDC role) is set. Optional variables: `AWS_REGION`, `GOOGLE_SECRET_NAME`.
+`.github/workflows/ci.yml` runs all gates on every PR. On `main` it deploys `happy-path-dev` when repo variable
+`AWS_DEPLOY_ROLE_ARN` is set (see the one-time setup above). Optional variables: `AWS_REGION`, `GOOGLE_SECRET_NAME`.
 
 ## Production hardening (before going beyond POC)
 

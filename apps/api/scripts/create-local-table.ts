@@ -16,7 +16,7 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(endpoint)) {
 }
 
 const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'ap-southeast-1',
+  region: process.env.AWS_REGION || 'ap-southeast-2',
   endpoint,
   credentials: { accessKeyId: 'local', secretAccessKey: 'local' },
 });

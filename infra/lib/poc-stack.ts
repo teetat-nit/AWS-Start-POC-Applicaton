@@ -26,6 +26,8 @@ import { existsSync } from 'node:fs';
 import * as path from 'node:path';
 
 export interface PocStackProps extends StackProps {
+  /** Used in resource names and descriptions, e.g. "happy-path". */
+  projectName: string;
   envName: string;
   /** Secrets Manager secret name holding {"clientId": "...", "clientSecret": "..."}. Omit to disable Google login. */
   googleSecretName?: string;
@@ -149,7 +151,7 @@ export class PocStack extends Stack {
         });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
-      comment: `aws-start-poc ${props.envName}`,
+      comment: `${props.projectName} ${props.envName}`,
       defaultRootObject: 'index.html',
       priceClass: cloudfront.PriceClass.PRICE_CLASS_200,
       defaultBehavior: {

@@ -5,6 +5,7 @@ import { PocStack } from '../lib/poc-stack';
 
 const props = {
   env: { account: '111111111111', region: 'ap-southeast-1' },
+  projectName: 'happy-path',
   envName: 'dev',
 };
 

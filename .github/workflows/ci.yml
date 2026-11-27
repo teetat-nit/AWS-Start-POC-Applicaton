@@ -4,9 +4,17 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch: # "Run workflow" button: re-deploy main without a new commit
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PROJECT_NAME: happy-path
 
 jobs:
   verify:
@@ -27,15 +35,18 @@ jobs:
         run: pnpm --filter infra synth -q
 
   deploy-dev:
-    # Requires repo variable AWS_DEPLOY_ROLE_ARN: an IAM role trusted for GitHub OIDC
-    # (token.actions.githubusercontent.com, sub = repo:<org>/<repo>:environment:dev).
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    # Needs repository variable AWS_DEPLOY_ROLE_ARN = output "DeployRoleArn" of stack happy-path-github-oidc
+    # (one-time setup from a laptop, see README "Deploy to AWS"). No AWS keys are stored in GitHub.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.AWS_DEPLOY_ROLE_ARN != ''
     needs: verify
     runs-on: ubuntu-latest
-    environment: dev
+    environment:
+      name: dev
+      url: ${{ steps.outputs.outputs.app_url }}
+    concurrency: deploy-dev # never run two deploys of the same environment at once
     permissions:
       contents: read
-      id-token: write
+      id-token: write # lets the job request a GitHub OIDC token for AWS
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -48,8 +59,16 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-southeast-2' }}
+          role-session-name: gh-${{ github.run_id }}
       - name: cdk deploy (dev)
         run: >
-          pnpm --filter infra exec cdk deploy --require-approval never -c env=dev
+          pnpm --filter infra exec cdk deploy "$PROJECT_NAME-dev"
+          --require-approval never --outputs-file cdk-outputs.json -c env=dev
           ${{ vars.GOOGLE_SECRET_NAME && format('-c googleSecretName={0}', vars.GOOGLE_SECRET_NAME) || '' }}
+      - name: Stack outputs
+        id: outputs
+        run: |
+          url=$(jq -r --arg s "$PROJECT_NAME-dev" '.[$s].AppUrl' infra/cdk-outputs.json)
+          echo "app_url=$url" >> "$GITHUB_OUTPUT"
+          echo "### Deployed $PROJECT_NAME-dev: $url" >> "$GITHUB_STEP_SUMMARY"
