@@ -4,7 +4,7 @@ import {
   Stack,
   type StackProps,
   CfnOutput,
-  Annotations,
+  Annotations, 
   aws_certificatemanager as acm,
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as origins,
