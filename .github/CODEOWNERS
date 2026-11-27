@@ -1,0 +1,6 @@
+# Code owners are requested as reviewers automatically on every pull request,
+# and the "Protect main" ruleset requires their approval before merging to main.
+# Changes to CI/CD and infrastructure decide what reaches AWS: review them carefully.
+*                 @teetat-nit
+/.github/         @teetat-nit
+/infra/           @teetat-nit
